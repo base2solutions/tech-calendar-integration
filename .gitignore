@@ -87,3 +87,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# env secrets
+secrets.sh
+google_calendar_secret.json
