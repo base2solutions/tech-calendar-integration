@@ -7,7 +7,9 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+
 import datetime
+import re
 
 try:
     import argparse
@@ -21,29 +23,34 @@ APPLICATION_NAME = 'Meetup Calendar Integration'
 meetupToken = os.environ.get('MEETUP_ACCESS_TOKEN', None)
 meetupMember = os.environ.get('MEETUP_MEMBER_ID', None)
 googleCalendar = os.environ.get('GOOGLE_CALENDAR_ID', None)
-all_events = {'member_id': meetupMember}
-meetup_client = meetup.api.Client(meetupToken)
-my_events = meetup_client.GetEvents(all_events)
-events_dict = my_events.results
 
+def meetup_events():
+    '''Meetup API Call. Returns events of Meetups user is subscribed to.'''
+    all_events = {'member_id': meetupMember}
+    meetup_client = meetup.api.Client(meetupToken)
+    my_events = meetup_client.GetEvents(all_events)
+    events_dict = my_events.results
+    return events_dict
 
-def get_meetups():
-    """Gets all events from Meetups user is subscribed to.
+def format_events():
+    """Formats event data for Google Calendar POST request.
 
-    If no end time is available, the event defaults to 2 hours.
+    Appends events to a list.
 
-    Individual event data is put in a dictionary json format acceptable by the Google
-        Calendar API and appended to a list.
+    If event end time is not listed, event defaults to 2 hours.
 
     """
+    events_dict = meetup_events()
     event_list = []
     calendar_dict = {}
+    clean = re.compile('<.*?>')
     for item in events_dict:
         url = item.get('event_url')
         name = item.get('name')
         group = item.get('group').get('name')
         summary = "{} - {}".format(name, group)
-        description = item.get('description')
+        html_description = item.get('description')
+        description = re.sub(clean, '', html_description)
         address = item.get('address_1')
         start_sec = item.get('time') / 1000.0
         try:
@@ -84,7 +91,7 @@ def get_meetups():
     return event_list
 
 def get_gcal_credentials():
-    """Gets valid user credentials from storage.
+    """Gets valid user Google Calendar credentials from storage.
 
     If nothing has been stored, or if the stored credentials are invalid,
     the OAuth2 flow is completed to obtain the new credentials.
@@ -112,11 +119,11 @@ def get_gcal_credentials():
     return credentials
 
 def add_to_calendar():
-    """Adds Meetup Events to Google Calendar """
+    """Iterates through events list. Adds events to Google Calendar."""
     credentials = get_gcal_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
-    event_list = get_meetups()
+    event_list = format_events()
     for event in event_list:
         service.events().insert(calendarId=googleCalendar, body=event).execute()
         print("events added for {}".format(event.get('summary')))
