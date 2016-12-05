@@ -29,8 +29,8 @@ def meetup_events():
     all_events = {'member_id': meetupMember}
     meetup_client = meetup.api.Client(meetupToken)
     my_events = meetup_client.GetEvents(all_events)
-    events_dict = my_events.results
-    return events_dict
+    events_list = my_events.results
+    return events_list
 
 def format_events():
     """Formats event data for Google Calendar POST request.
@@ -40,18 +40,21 @@ def format_events():
     If event end time is not listed, event defaults to 2 hours.
 
     """
-    events_dict = meetup_events()
-    event_list = []
-    calendar_dict = {}
+    events_list = meetup_events()
+    calendar_list = []
     clean = re.compile('<.*?>')
-    for item in events_dict:
+    for item in events_list:
         url = item.get('event_url')
         name = item.get('name')
         group = item.get('group').get('name')
         summary = "{} - {}".format(name, group)
         html_description = item.get('description')
         description = re.sub(clean, '', html_description)
-        address = item.get('address_1')
+        venue = item.get('venue')
+        try:
+            location = "{}, {}".format(venue.get('address_1'), venue.get('city'))
+        except AttributeError:
+            location = "N/A"
         start_sec = item.get('time') / 1000.0
         try:
             end_sec = (item.get('duration') / 1000.0) + start_sec
@@ -62,7 +65,7 @@ def format_events():
 
         calendar_dict = {
             'summary': summary,
-            'location': address,
+            'location': location,
             'description': description,
             'source': {
             'title': group,
@@ -87,8 +90,8 @@ def format_events():
             }
         }
 
-        event_list.append(calendar_dict)
-    return event_list
+        calendar_list.append(calendar_dict)
+    return calendar_list
 
 def get_gcal_credentials():
     """Gets valid user Google Calendar credentials from storage.
@@ -119,12 +122,12 @@ def get_gcal_credentials():
     return credentials
 
 def add_to_calendar():
-    """Iterates through events list. Adds events to Google Calendar."""
+    """Iterates through formatted events list. Adds events to Google Calendar."""
     credentials = get_gcal_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
-    event_list = format_events()
-    for event in event_list:
+    calendar_list = format_events()
+    for event in calendar_list:
         service.events().insert(calendarId=googleCalendar, body=event).execute()
         print("events added for {}".format(event.get('summary')))
 
