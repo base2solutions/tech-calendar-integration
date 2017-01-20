@@ -139,7 +139,7 @@ def check_calendar():
     existing_events = []
     while True:
         events = service.events().list(calendarId=googleCalendar, pageToken=page_token).execute()
-        for event in events['items']:
+        for event in events.get('items'):
             existing_events.append({'summary': event.get('summary'), 'start': event.get('start').get('dateTime')})
         page_token = events.get('nextPageToken')
         if not page_token:
@@ -149,7 +149,8 @@ def check_calendar():
 def add_to_calendar():
     """
     Compares event summary and start time to that of existing events.
-    Adds event to calendar the summary and start time is not already in calendar.
+    Adds a new event to calendar if the event doesn't match an existing event's
+    summary and start time.
     """
     credentials = get_gcal_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -164,5 +165,5 @@ def add_to_calendar():
                 service.events().insert(calendarId=googleCalendar, body=new_event).execute()
                 print("events added for {}".format(new_event.get('summary')))
 
-                
+
 add_to_calendar()
