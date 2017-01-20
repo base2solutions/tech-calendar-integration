@@ -1,21 +1,26 @@
 # Meetup + Google Calendar Integration
 Adds all events of [Meetups](https://www.meetup.com/) user is part of to their Google Calendar.
 
-Allows users to manage their Meetup calendar with the same tool they manage their work or personal calendars with.
+Allows users to manage their Meetup calendar with the same tool they manage their work or personal calendars with. No need to RSVP to event to have it added to Google Calendar (you should still RSVP if you are attending :-) ).
 
-Get Google Calendar notifications 30 minutes before an event.
+Notifies calendar user 30 minutes before an event.
 
 Share your calendar with individuals or across your organization.
 
 Utilizes the [Meetup API](https://www.meetup.com/meetup_api/) and [Google Calendar API](https://developers.google.com/google-apps/calendar/)
 
+## How it Works
+* Gets all events of Meetup user is part of.
+* Checks Google Calendar to see if event is already in calendar.
+* Updates calendar if there are new events.
+
 ## Setup
 
 * git clone this repository
 * install [pip](https://pip.pypa.io/en/stable/installing/)
-* `pip install requirements.txt`
+* from the project root `pip install requirements.txt`
 
-### Turn on the Google Calendar API (from [Quickstart Guide](https://developers.google.com/google-apps/calendar/quickstart/python))
+### Turn on the Google Calendar API (from [Google Calendar API Quickstart Guide](https://developers.google.com/google-apps/calendar/quickstart/python))
 
 * Use this [wizard](https://console.developers.google.com/start/api?id=calendar) to create or select a project in the Google Developers Console and automatically turn on the API. Click Continue, then Go to credentials.
 * On the Add credentials to your project page, click the Cancel button.
